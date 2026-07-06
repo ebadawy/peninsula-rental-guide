@@ -1604,6 +1604,52 @@ body.explorer-mode #backtop{display:none;}
   70%{ box-shadow:0 0 0 3px #fff, 0 0 0 12px rgba(14,122,95,0), 0 6px 16px rgba(14,122,95,.4); }
   100%{ box-shadow:0 0 0 3px #fff, 0 0 0 12px rgba(14,122,95,0), 0 6px 16px rgba(14,122,95,.4); }
 }
+
+/* ============ LEGEND FIX + MOBILE-NATIVE CARDS (Jul 2026) ============ */
+/* Root cause of the legend's empty gap: the site-wide `section{padding:56px 0 8px}` rule was
+   bleeding into Leaflet's internal <section class="leaflet-control-layers-list">. Scope it out. */
+.leaflet-container section{ padding:0 !important; margin:0 !important; }
+.leaflet-control-layers-list{ padding:2px 2px !important; }
+.leaflet-control-layers{ line-height:1.3; }
+.leaflet-control-layers label{ margin:2px 0; }
+
+@media (max-width:768px){
+  /* --- Mobile-native listing card: compact, inline, information-dense (not a shrunk desktop) --- */
+  .explorer-sidebar .board{ gap:8px; }
+  .lcard{ padding:11px 13px 10px 14px; gap:4px; border-radius:12px; }
+  .lc-accent{ width:3px; }
+
+  /* price row */
+  .lc-top{ gap:6px; padding-right:30px; }
+  .lc-price{ font-size:20px; }
+  .lc-price i{ font-size:9.5px; }
+
+  /* address + city: tight, address can ellipsize */
+  .lc-addr{ font-size:13.5px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lc-city{ font-size:10.5px; margin:0; }
+
+  /* specs: plain inline text with dot separators (drop the chip boxes) */
+  .lc-specs{ gap:0; flex-wrap:nowrap; font-family:'Spline Sans Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .lc-specs .spec{ background:none !important; border:none !important; padding:0 !important; border-radius:0; }
+  .lc-specs .spec + .spec::before{ content:"·"; margin:0 6px; opacity:.45; }
+
+  /* metrics: light single inline row, value-forward, no box */
+  .lc-metrics{ display:flex; flex-wrap:wrap; gap:0 4px; background:none !important; border:none !important; border-radius:0; overflow:visible; margin-top:5px; }
+  .lc-metrics .metric{ background:none !important; padding:0 !important; flex-direction:row; align-items:baseline; gap:4px; }
+  .lc-metrics .metric + .metric::before{ content:"·"; margin-right:8px; opacity:.45; align-self:center; }
+  .lc-metrics .metric span{ font-size:9px; letter-spacing:.03em; }
+  .lc-metrics .metric b{ font-size:11.5px; }
+  .lc-metrics .metric b.mut{ font-size:11px; }
+
+  /* footer: compact single line */
+  .lc-foot{ gap:7px; padding-top:3px; }
+  .lc-foot .grade{ font-size:10px; padding:1px 7px; }
+  .lc-foot .lc-px{ font-size:11px; }
+  .lc-foot .pet{ font-size:9.5px; }
+  .lc-foot .lc-view{ font-size:11px; }
+  .lc-fav{ width:32px; height:32px; top:9px; right:9px; font-size:14px; }
+  .lc-pm{ margin-top:6px; padding-top:6px; font-size:10px; }
+}
 /* === DESIGN_CSS_END === */
 </style>
 </head>
