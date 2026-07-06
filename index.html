@@ -1393,6 +1393,59 @@ table.citable .grade {
     left: 38px !important;
   }
 }
+
+/* ===================== MOBILE POLISH (QA pass, Jul 2026) ===================== */
+
+/* Back-to-top: was an unstyled inline glyph on every page -> real floating FAB */
+#backtop{position:fixed;right:16px;bottom:16px;width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;padding:0;
+  background:var(--evergreen);color:#fff;border:none;cursor:pointer;
+  box-shadow:0 4px 14px rgba(20,35,28,.35);opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:opacity .2s,transform .2s,visibility .2s;z-index:1200;}
+#backtop.show{opacity:1;visibility:visible;transform:none;}
+body.explorer-mode #backtop{display:none;}
+
+/* Leaflet layer control: the null base-layer left a dead empty block -> remove it */
+.leaflet-control-layers-base,.leaflet-control-layers-separator{display:none;}
+
+/* Remove the duplicate native search clear button (custom .st-clear handles it) */
+#f_q::-webkit-search-cancel-button{-webkit-appearance:none;display:none;}
+
+/* City-insights table: keep the City column visible while scrolling the other columns */
+.citable td:first-child,.citable th:first-child{position:sticky;left:0;background:var(--card);z-index:2;}
+.citable-wrap{position:relative;-webkit-overflow-scrolling:touch;}
+
+@media (max-width:900px){
+  .nav-links .tab-btn{padding:10px 13px;}                 /* >=40px tap height */
+  .nav-links{-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);mask-image:linear-gradient(90deg,#000 90%,transparent);}
+}
+
+@media (max-width:1024px){
+  .explorer-sidebar .sidebar-tools{position:static;}      /* don't let expanded Filters dominate the phone */
+  .explorer-sidebar{padding-bottom:84px;}                 /* clear the fixed List/Map toggle */
+  .st-adv > label:last-child{grid-column:1 / -1;}         /* lone "Managed by" spans full width */
+}
+
+@media (max-width:768px){
+  .leaflet-control-layers{max-width:62vw;font-size:12px;}
+  .leaflet-touch .leaflet-bar a{width:40px;height:40px;line-height:40px;}  /* zoom targets */
+  .leaflet-control-attribution{font-size:9px;}
+  .lc-metrics .metric span{font-size:10px;}               /* lift sub-9px labels */
+  .cc-val{font-size:11.5px;}
+  .ag-stat span{font-size:11px;}
+  .lc-fav{width:36px;height:36px;}
+  #chips .chip{padding:7px 11px;font-size:12px;}           /* bigger vendor-chip tap targets */
+  #chips .chip-row{gap:8px;}
+  .citable-wrap::after{content:"";position:absolute;top:0;right:0;width:22px;height:100%;
+    background:linear-gradient(90deg,rgba(252,251,249,0),rgba(20,35,28,.09));pointer-events:none;}
+}
+
+@media (max-width:560px){
+  #crimeChart .chart-card{overflow-x:auto;-webkit-overflow-scrolling:touch;}  /* readable bars, scroll if needed */
+  .cc-head,.cc-row{grid-template-columns:108px 118px 118px;min-width:344px;}
+  .cc-city{white-space:normal;line-height:1.12;}
+  .ag-stat b{font-size:22px;}
+}
 /* === DESIGN_CSS_END === */
 </style>
 </head>
@@ -2206,7 +2259,12 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
     var targetBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
     
     if (targetPanel) targetPanel.classList.add("active");
-    if (targetBtn) targetBtn.classList.add("active");
+    if (targetBtn) {
+      targetBtn.classList.add("active");
+      // The tab strip scrolls horizontally on narrow screens — keep the active tab in view
+      // so there's always wayfinding (otherwise Safety/Cats/Next sit off-screen on mobile).
+      try { targetBtn.scrollIntoView({inline:"center", block:"nearest"}); } catch(e){}
+    }
 
     // Lock body scrolling in explorer mode (Search & Map), enable for normal reading tabs
     if (tabId === "live") {
@@ -2739,7 +2797,7 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       .bindPopup('<div class="pop-t">'+money(l.pr)+'/mo &mdash; '+l.a+'</div>'
         +'<div class="pop-m">'+l.c+' '+l.z+' &middot; '+l.bd+'bd/'+l.ba+'ba'+(l.sq?' &middot; '+l.sq.toLocaleString()+' sqft':'')+' &middot; '+l.ht+extra+cityScoreChip(l.c)+'</div>'
         +com
-        +'<a href="'+l.url+'" target="_blank" rel="noopener">View on '+l.src+' &#8599;</a>', {autoPan:false});
+        +'<a href="'+l.url+'" target="_blank" rel="noopener">View on '+l.src+' &#8599;</a>', {autoPan:true, autoPanPadding:[16,92], keepInView:true});
     // Pin click -> highlight + scroll the matching card into the middle of the sidebar (map -> list)
     m.on("click", function(){ setSelected(idx); revealCard(idx); });
     return m;
@@ -2810,11 +2868,14 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
     function areaLabel(name, arr){
       return '<b>'+name+'</b><i>'+((arr&&arr.length)?shortMoney(median(arr)):'\u2014')+'</i>';
     }
+    // Permanent labels are lovely on desktop but ~34 always-on tooltips janks phones — on small
+    // screens bind them as tap-to-show tooltips instead (labels appear on tap, popups still work).
+    var LABELS_PERMANENT = (typeof window!=="undefined" ? window.innerWidth : 1200) > 1024;
     function addPoly(geom, gc, labelHTML, popupHTML){
       var col=GRADE_COLOR[gc]||"#B98A1F";
       var gj=L.geoJSON(geom,{style:{color:col,weight:2,opacity:.85,fillColor:col,fillOpacity:.13,dashArray:(gc==="c"?"5 5":undefined)}});
       if(popupHTML)gj.bindPopup(popupHTML);
-      gj.bindTooltip(labelHTML,{permanent:true,direction:"center",className:"region-label"});
+      gj.bindTooltip(labelHTML,{permanent:LABELS_PERMANENT,direction:"center",className:"region-label"});
       gj.addTo(regionLayer);
     }
     var zipsByCity={};
