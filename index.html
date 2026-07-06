@@ -2859,8 +2859,15 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       if(t.closest(".lc-view"))return;              // let the source link open normally
       var card=t.closest?t.closest(".lcard"):null; if(!card)return;
       var idx=Number(card.getAttribute("data-idx"));
-      if(mapApi.focus)mapApi.focus(idx);
-      if(window.innerWidth<=1024){ var mb=document.getElementById("btn-view-map"); if(mb)mb.click(); }
+      if(window.innerWidth<=1024){
+        // Mobile: switch to the map FIRST, let it size, THEN open the popup. Opening it while the
+        // map is still display:none makes Leaflet measure a 0-width popup (it collapses to ~1 word
+        // per line). btnMap runs invalidateSize on a short delay, so we focus just after.
+        var mb=document.getElementById("btn-view-map"); if(mb)mb.click();
+        setTimeout(function(){ if(mapApi.focus)mapApi.focus(idx); }, 220);
+      } else {
+        if(mapApi.focus)mapApi.focus(idx);
+      }
     });
 
     document.getElementById("f_reset").addEventListener("click",resetAll);
@@ -3090,7 +3097,7 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       .bindPopup('<div class="pop-t">'+money(l.pr)+'/mo &mdash; '+l.a+'</div>'
         +'<div class="pop-m">'+l.c+' '+l.z+' &middot; '+l.bd+'bd/'+l.ba+'ba'+(l.sq?' &middot; '+l.sq.toLocaleString()+' sqft':'')+' &middot; '+l.ht+extra+cityScoreChip(l.c)+'</div>'
         +com
-        +'<a href="'+l.url+'" target="_blank" rel="noopener">View on '+l.src+' &#8599;</a>', {autoPan:true, autoPanPadding:[16,92], keepInView:true});
+        +'<a href="'+l.url+'" target="_blank" rel="noopener">View on '+l.src+' &#8599;</a>', {autoPan:true, autoPanPadding:[16,92], keepInView:true, minWidth:210, maxWidth:280});
     // Pin click -> highlight + scroll the matching card into the middle of the sidebar (map -> list)
     m.on("click", function(){ setSelected(idx); revealCard(idx); });
     return m;
