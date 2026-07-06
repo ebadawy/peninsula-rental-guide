@@ -1293,85 +1293,57 @@ table.citable .grade {
 }
 
 @media (max-width: 1024px) {
+  /* Mobile explorer = a column: [shared control bar] then [list OR map] filling the rest. */
   .explorer-container {
-    height: calc(100vh - var(--nav-h) - 56px);
+    flex-direction: column;
+    height: calc(100dvh - var(--nav-h));
+    overflow: hidden;
   }
-  
+
+  /* Shared top control bar (search + quick chips + filters + view toggle) lives ABOVE both the
+     list and the map, so filtering applies in map view too. Height-capped with internal scroll
+     so an expanded Filters panel never crowds the map off-screen. */
+  .explorer-container > .sidebar-tools {
+    flex: 0 0 auto; width: 100%; margin: 0; border-radius: 0; z-index: 500;
+    max-height: 70%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    box-shadow: 0 6px 16px rgba(20,35,28,.10);
+  }
+
   .explorer-sidebar {
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-    display: block;
+    width: 100%; max-width: none; min-width: 0;
+    flex: 1 1 auto; min-height: 0; display: block;
   }
-  
   .explorer-map {
-    width: 100%;
-    height: 100%;
-    display: none;
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 10;
+    width: 100%; flex: 1 1 auto; min-height: 0;
+    position: relative; top: auto; left: auto; display: none;
   }
-  
-  /* Mobile Toggle active state */
-  .explorer-container.show-map .explorer-sidebar {
-    display: none;
-  }
-  
-  .explorer-container.show-map .explorer-map {
-    display: block;
-  }
-  
-  /* Offset mobile map-bar collision with floating view toggler */
+  .explorer-map .map-shell, .explorer-map #livemap { height: 100%; }
+
+  .explorer-container.show-map .explorer-sidebar { display: none; }
+  .explorer-container.show-map .explorer-map { display: block; animation: paneIn .26s ease; }
+  .explorer-container:not(.show-map) .explorer-sidebar { animation: paneIn .26s ease; }
+
+  /* Legend now sits at the map's bottom edge (toggle moved up into the control bar) */
   .explorer-map .map-bar {
-    bottom: 80px !important;
-    left: 12px !important;
-    right: 12px !important;
-    padding: 8px 12px !important;
+    bottom: 12px !important; left: 12px !important; right: 12px !important; padding: 8px 12px !important;
   }
-  
-  /* Mobile glassmorphism switcher bar */
+
+  /* View toggle: inline segmented control inside the control bar (was a floating pill) */
   .mobile-view-toggle-bar {
-    display: flex;
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(252, 251, 249, 0.85);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(18, 32, 27, 0.08);
-    border-radius: 99px;
-    padding: 4px;
-    gap: 4px;
-    box-shadow: 0 10px 30px rgba(18, 32, 27, 0.15);
-    z-index: 1100;
-    width: 240px;
+    display: flex; position: static; transform: none; left: auto; bottom: auto;
+    width: 100%; margin: 0 0 12px; padding: 4px; gap: 4px;
+    background: var(--chip); border: 1px solid var(--line); border-radius: 12px; box-shadow: none;
   }
-  
   .mobile-view-toggle-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--ink-soft);
-    font-family: 'Spline Sans Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 8px 12px;
-    border-radius: 99px;
-    cursor: pointer;
+    flex: 1; background: transparent; border: none; color: var(--ink-soft);
+    font-family: 'Spline Sans Mono', monospace; font-size: 12px; font-weight: 600;
+    padding: 10px 12px; border-radius: 9px; cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
-  
-  .mobile-view-toggle-btn.active {
-    background: var(--ink);
-    color: var(--white);
-    box-shadow: var(--shadow-sm);
-  }
+  .mobile-view-toggle-btn.active { background: var(--ink); color: var(--white); box-shadow: var(--shadow-sm); }
 }
+@keyframes paneIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* Hide brand subtitle on narrow phone viewports to fit tabs on a single line */
 @media (max-width: 768px) {
@@ -1421,8 +1393,7 @@ body.explorer-mode #backtop{display:none;}
 }
 
 @media (max-width:1024px){
-  .explorer-sidebar .sidebar-tools{position:static;}      /* don't let expanded Filters dominate the phone */
-  .explorer-sidebar{padding-bottom:84px;}                 /* clear the fixed List/Map toggle */
+  .explorer-sidebar{padding-bottom:24px;}                 /* toggle moved to the top control bar */
   .st-adv > label:last-child{grid-column:1 / -1;}         /* lone "Managed by" spans full width */
 }
 
@@ -1445,6 +1416,13 @@ body.explorer-mode #backtop{display:none;}
   .cc-head,.cc-row{grid-template-columns:108px 118px 118px;min-width:344px;}
   .cc-city{white-space:normal;line-height:1.12;}
   .ag-stat b{font-size:22px;}
+}
+
+/* Card tactile feedback + selected lift on touch */
+@media (max-width:1024px){
+  .lcard{ transition: transform .12s ease, box-shadow .18s ease; }
+  .lcard:active{ transform: scale(.994); }
+  .lcard.sel{ box-shadow:0 0 0 2px var(--evergreen), var(--shadow-md); }
 }
 /* === DESIGN_CSS_END === */
 </style>
@@ -1509,10 +1487,10 @@ body.explorer-mode #backtop{display:none;}
   
   <div class="mobile-view-toggle-bar">
     <button class="mobile-view-toggle-btn active" id="btn-view-list">
-      <span>List View</span>
+      <span>&#9776; List</span>
     </button>
     <button class="mobile-view-toggle-btn" id="btn-view-map">
-      <span>Map View</span>
+      <span>&#128506;&#65039; Map</span>
     </button>
   </div>
 
@@ -2527,11 +2505,27 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       +'</div>'
       +'<div class="st-results"><span class="fcount" id="fcount"></span><button class="f-reset" id="f_reset">Reset all</button></div>';
 
-    // Place the toolbar as a direct, sticky child of the sidebar (sticks across the whole card scroll).
+    // Desktop: the toolbar is a sticky child of the scrolling sidebar.
+    // Mobile: the toolbar (search + filters + view toggle) is a SHARED top bar above both the
+    // list and the map, so filtering works in BOTH views (not just the list). The view toggle is
+    // folded into it as a segmented control instead of a detached floating pill.
+    var container=document.querySelector(".explorer-container");
     var sidebar=document.querySelector(".explorer-sidebar");
     var head=document.querySelector(".sidebar-head");
-    if(head&&head.parentNode) head.parentNode.insertBefore(tools, head.nextSibling);
-    else if(sidebar) sidebar.insertBefore(tools, sidebar.firstChild);
+    var toggleBar=document.querySelector(".mobile-view-toggle-bar");
+    if(toggleBar) tools.insertBefore(toggleBar, tools.firstChild);   // segmented control at the top, travels with the controls
+    function placeTools(){
+      var mobile=window.innerWidth<=1024;
+      if(mobile){
+        if(container && tools.parentNode!==container) container.insertBefore(tools, container.firstChild);
+      } else if(head&&head.parentNode && tools.previousElementSibling!==head){
+        head.parentNode.insertBefore(tools, head.nextSibling);
+      } else if(sidebar && tools.parentNode!==sidebar){
+        sidebar.insertBefore(tools, sidebar.firstChild);
+      }
+    }
+    placeTools();
+    var _placeRt; window.addEventListener("resize", function(){ clearTimeout(_placeRt); _placeRt=setTimeout(placeTools, 200); });
 
     function bind(id,key,num){var e=document.getElementById(id); if(e)e.addEventListener("change",function(ev){F[key]=num?Number(ev.target.value):ev.target.value;apply();});}
     bind("f_city","city");bind("f_ht","ht");bind("f_src","src");bind("f_pm","pmf");bind("f_grade","grade");bind("f_sort","sort");
@@ -2720,11 +2714,13 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
         container.classList.add("show-map");
         btnMap.classList.add("active");
         btnList.classList.remove("active");
-        // Re-invalidate map bounds instantly on viewport change
+        // The map was initialized inside a hidden (0-size) container on mobile, so re-measure it;
+        // and if it fell back to the world view (very low zoom), re-fit it to the listings.
         if (map) {
           setTimeout(function() {
             map.invalidateSize();
-          }, 100);
+            if (mapApi.homeBounds && map.getZoom() <= 6) { map.fitBounds(mapApi.homeBounds); }
+          }, 120);
         }
       });
     }
@@ -2895,11 +2891,12 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
   L.control.layers(null,{
     "&#127968; Home listings":listingLayer,
     "&#128737;&#65039; Safety &amp; price by area":regionLayer
-  },{collapsed:false,position:"topright"}).addTo(map);
+  },{collapsed: (typeof window!=="undefined" && window.innerWidth<=1024), position:"topright"}).addTo(map);
 
   // Show the full picture once on load: fit to all listings + Meta HQ.
   var pts=LISTINGS.map(function(l){return l.ll;}).concat([META_LL]);
-  map.fitBounds(L.latLngBounds(pts).pad(0.12));
+  mapApi.homeBounds=L.latLngBounds(pts).pad(0.12);
+  map.fitBounds(mapApi.homeBounds);
 
   // Initialize and run hash router trigger on load
   handleHashNavigation();
