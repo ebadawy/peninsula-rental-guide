@@ -1473,6 +1473,88 @@ body.explorer-mode #backtop{display:none;}
   .lc-fav { width: 34px; height: 34px; top: 12px; right: 12px; }
   .lc-pm { margin-top: 7px; padding-top: 7px; }
 }
+
+/* ===================== MOBILE: bottom-sheet filters (Jul 2026 v2) =====================
+   The always-visible chrome is ONE compact row (.m-controls). All search/filter controls
+   live in a slide-up sheet that floats OVER content, so they never eat layout space. */
+.m-controls{ display:none; }
+.m-sheet-backdrop{ display:none; }
+
+@media (max-width:1024px){
+  /* --- compact always-visible control row: [List|Map] [search] [Filters·N] --- */
+  .m-controls{
+    display:flex; align-items:center; gap:8px; flex:0 0 auto;
+    padding:8px 12px; background:var(--fog); border-bottom:1px solid var(--line); z-index:60;
+  }
+  .m-controls .mobile-view-toggle-bar{ flex:1 1 auto; margin:0; }
+  .m-controls .m-icon{
+    flex:0 0 auto; width:44px; height:40px; border:1px solid var(--line); border-radius:10px;
+    background:var(--card); font-size:17px; color:var(--ink); cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .m-controls .m-filters{
+    flex:0 0 auto; height:40px; padding:0 14px; border:1px solid var(--line); border-radius:10px;
+    background:var(--card); font:600 12px 'Spline Sans Mono',monospace; color:var(--ink); cursor:pointer;
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .m-controls .m-filters.on{ border-color:var(--evergreen); color:var(--evergreen); background:rgba(37,120,80,.06); }
+  .m-fbadge{ background:var(--evergreen); color:#fff; border-radius:99px; min-width:18px; height:18px;
+    padding:0 5px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+
+  /* free up vertical space: drop the big "On the market" heading + inline Filters button */
+  .explorer-sidebar .sidebar-head{ display:none; }
+  .sidebar-tools.as-sheet .st-more{ display:none; }
+  .explorer-sidebar{ padding:14px 16px 24px; }
+
+  /* --- the toolbar becomes a bottom SHEET (fixed, slides up over content) --- */
+  .explorer-container > .sidebar-tools.as-sheet{
+    position:fixed; left:0; right:0; bottom:0; top:auto; width:100%;
+    max-height:86dvh; margin:0; padding:0 16px 20px; border-radius:20px 20px 0 0; border:none;
+    background:var(--fog); box-shadow:0 -14px 44px rgba(20,35,28,.30);
+    transform:translateY(103%); transition:transform .30s cubic-bezier(.32,.72,0,1);
+    z-index:1400; overflow-y:auto; -webkit-overflow-scrolling:touch; display:block;
+  }
+  .explorer-container > .sidebar-tools.as-sheet.open{ transform:translateY(0); }
+
+  /* sheet header (grab handle + title + close), sticky at the top of the sheet */
+  .sheet-head{ position:sticky; top:0; background:var(--fog); padding:8px 0 10px; z-index:3; }
+  .sheet-drag{ display:block; width:40px; height:4px; border-radius:99px; background:var(--line); margin:0 auto 12px; }
+  .sheet-title-row{ display:flex; align-items:center; justify-content:space-between; }
+  .sheet-title-row b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
+  .sheet-close{ width:34px; height:34px; border:none; background:var(--chip); border-radius:50%;
+    font-size:20px; line-height:1; color:var(--ink); cursor:pointer; }
+
+  /* everything visible inside the sheet (undo desktop collapse) */
+  .sidebar-tools.as-sheet .st-search{ display:flex; margin-top:4px; }
+  .sidebar-tools.as-sheet .st-quick{ display:flex; margin-top:12px; }
+  .sidebar-tools.as-sheet .st-primary{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+  .sidebar-tools.as-sheet .st-adv{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .sidebar-tools.as-sheet .st-primary .st-more{ display:none; }
+
+  /* sticky action footer inside the sheet: Reset + prominent "Show N homes" */
+  .sidebar-tools.as-sheet .st-results{
+    display:flex; align-items:center; gap:12px; position:sticky; bottom:0; margin:14px -16px 0;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--fog);
+    border-top:1px solid var(--line);
+  }
+  .sidebar-tools.as-sheet .fcount{ display:none; }
+  .sidebar-tools.as-sheet .f-reset{ flex:0 0 auto; }
+  .sheet-apply{
+    flex:1 1 auto; height:46px; border:none; border-radius:12px; background:var(--evergreen); color:#fff;
+    font:700 14px 'Spline Sans Mono',monospace; cursor:pointer;
+  }
+
+  /* backdrop behind the sheet */
+  .m-sheet-backdrop{ display:block; position:fixed; inset:0; background:rgba(20,35,28,.45);
+    z-index:1390; opacity:0; transition:opacity .30s ease; }
+  .m-sheet-backdrop.show{ opacity:1; }
+  body.sheet-open{ overflow:hidden; }
+}
+
+/* desktop: sheet-only chrome never shows */
+@media (min-width:1025px){
+  .m-controls, .m-sheet-backdrop, .sheet-head, .sheet-apply{ display:none !important; }
+}
 /* === DESIGN_CSS_END === */
 </style>
 </head>
@@ -2512,6 +2594,8 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       var narrowed=list.length<BASE.length;
       if(mapApi.filter) mapApi.filter(list, narrowed);
       var fmoreBtn=document.getElementById("f_more"); if(fmoreBtn) fmoreBtn.classList.toggle("has-active", narrowed);
+      if(window.__refreshFilterBadge) window.__refreshFilterBadge();
+      var applyBtn=document.getElementById("sheet-apply"); if(applyBtn) applyBtn.textContent="Show "+list.length+" home"+(list.length===1?"":"s");
       var mfn=document.getElementById("mapFilterNote");
       if(mfn){
         if(narrowed){ mfn.innerHTML='<b>'+list.length+'</b>&nbsp;of&nbsp;'+BASE.length+' shown'; mfn.hidden=false; }
@@ -2553,29 +2637,85 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
         +selBox("f_src","Source", opt("all","All",1)+sources.map(function(s){return opt(s,s);}).join(''))
         +(pms.length?selBox("f_pm","Managed by", opt("all","Any",1)+pms.map(function(s){return opt(s,s);}).join('')):'')
       +'</div>'
-      +'<div class="st-results"><span class="fcount" id="fcount"></span><button class="f-reset" id="f_reset">Reset all</button></div>';
+      +'<div class="st-results"><span class="fcount" id="fcount"></span>'
+        +'<button class="f-reset" id="f_reset">Reset all</button>'
+        +'<button class="sheet-apply" id="sheet-apply">Show homes</button></div>';
 
-    // Desktop: the toolbar is a sticky child of the scrolling sidebar.
-    // Mobile: the toolbar (search + filters + view toggle) is a SHARED top bar above both the
-    // list and the map, so filtering works in BOTH views (not just the list). The view toggle is
-    // folded into it as a segmented control instead of a detached floating pill.
     var container=document.querySelector(".explorer-container");
     var sidebar=document.querySelector(".explorer-sidebar");
     var head=document.querySelector(".sidebar-head");
     var toggleBar=document.querySelector(".mobile-view-toggle-bar");
-    if(toggleBar) tools.insertBefore(toggleBar, tools.firstChild);   // segmented control at the top, travels with the controls
-    function placeTools(){
+
+    // --- Mobile chrome: a single always-visible compact row + a slide-up filter SHEET ---------
+    // Desktop keeps the inline sticky toolbar. On phones the toolbar becomes a bottom sheet that
+    // floats over content (so it never permanently eats vertical space); the only fixed chrome is
+    // one 52px row: [List|Map] + search + Filters(count).
+    var mBar=document.createElement("div"); mBar.className="m-controls";
+    var mSearchBtn=document.createElement("button"); mSearchBtn.className="m-icon"; mSearchBtn.id="m-search"; mSearchBtn.setAttribute("aria-label","Search"); mSearchBtn.innerHTML="\u2315";
+    var mFiltersBtn=document.createElement("button"); mFiltersBtn.className="m-filters"; mFiltersBtn.id="m-filters"; mFiltersBtn.innerHTML="\u2699 Filters<span class=\"m-fbadge\" hidden></span>";
+    var backdrop=document.createElement("div"); backdrop.className="m-sheet-backdrop"; backdrop.hidden=true;
+    var sheetHead=document.createElement("div"); sheetHead.className="sheet-head";
+    sheetHead.innerHTML='<span class="sheet-drag"></span><div class="sheet-title-row"><b>Search &amp; filters</b><button class="sheet-close" id="sheet-close" aria-label="Close">\u00d7</button></div>';
+
+    function activeFilterCount(){
+      var n=0;
+      if(F.q)n++; if(F.city!=="all")n++; if(F.src!=="all")n++; if(F.pmf!=="all")n++; if(F.ht!=="all")n++;
+      if(F.beds)n++; if(F.baths)n++; if(F.pmin!==2400)n++; if(F.pmax!==6000)n++; if(F.sqmin)n++;
+      if(F.grade!=="all")n++; if(F.deal)n++; if(F.newOnly)n++; if(F.fav)n++;
+      return n;
+    }
+    function refreshFilterBadge(){
+      var n=activeFilterCount(), b=mFiltersBtn.querySelector(".m-fbadge");
+      if(b){ b.textContent=n; b.hidden=!n; }
+      mFiltersBtn.classList.toggle("on", !!n);
+    }
+    function openSheet(focusSearch){
+      document.body.classList.add("sheet-open");
+      backdrop.hidden=false;
+      requestAnimationFrame(function(){ backdrop.classList.add("show"); tools.classList.add("open"); });
+      if(focusSearch){ var q=document.getElementById("f_q"); if(q) setTimeout(function(){q.focus();},260); }
+    }
+    function closeSheet(){
+      tools.classList.remove("open"); backdrop.classList.remove("show");
+      document.body.classList.remove("sheet-open");
+      setTimeout(function(){ if(!tools.classList.contains("open")) backdrop.hidden=true; },260);
+    }
+    mFiltersBtn.addEventListener("click",function(){ tools.classList.contains("open")?closeSheet():openSheet(false); });
+    mSearchBtn.addEventListener("click",function(){ openSheet(true); });
+    backdrop.addEventListener("click",closeSheet);
+    sheetHead.querySelector("#sheet-close").addEventListener("click",closeSheet);
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&tools.classList.contains("open"))closeSheet(); });
+
+    function layout(){
       var mobile=window.innerWidth<=1024;
       if(mobile){
-        if(container && tools.parentNode!==container) container.insertBefore(tools, container.firstChild);
-      } else if(head&&head.parentNode && tools.previousElementSibling!==head){
-        head.parentNode.insertBefore(tools, head.nextSibling);
-      } else if(sidebar && tools.parentNode!==sidebar){
-        sidebar.insertBefore(tools, sidebar.firstChild);
+        // compact bar = [segmented toggle] [search] [filters]
+        if(toggleBar && toggleBar.parentNode!==mBar) mBar.appendChild(toggleBar);
+        if(mSearchBtn.parentNode!==mBar) mBar.appendChild(mSearchBtn);
+        if(mFiltersBtn.parentNode!==mBar) mBar.appendChild(mFiltersBtn);
+        if(container && mBar.parentNode!==container) container.insertBefore(mBar, container.firstChild);
+        // tools becomes the sheet (fixed), with a header + backdrop
+        tools.classList.add("as-sheet");
+        if(tools.firstChild!==sheetHead) tools.insertBefore(sheetHead, tools.firstChild);
+        if(container && tools.parentNode!==container) container.appendChild(tools);
+        if(backdrop.parentNode!==document.body) document.body.appendChild(backdrop);
+        var adv=document.getElementById("f_adv"); if(adv) adv.hidden=false;   // everything visible in the sheet
+        refreshFilterBadge();
+      } else {
+        // desktop: inline sticky toolbar in the sidebar (unchanged)
+        document.body.classList.remove("sheet-open"); backdrop.classList.remove("show"); backdrop.hidden=true;
+        tools.classList.remove("as-sheet","open");
+        if(sheetHead.parentNode===tools) tools.removeChild(sheetHead);
+        if(toggleBar && toggleBar.parentNode===mBar) { /* toggle hidden on desktop via CSS */ }
+        if(mBar.parentNode) mBar.parentNode.removeChild(mBar);
+        if(head&&head.parentNode){ if(tools.previousElementSibling!==head) head.parentNode.insertBefore(tools, head.nextSibling); }
+        else if(sidebar && tools.parentNode!==sidebar){ sidebar.insertBefore(tools, sidebar.firstChild); }
+        var adv2=document.getElementById("f_adv"); if(adv2 && !document.getElementById("f_more").classList.contains("on")) adv2.hidden=true;
       }
     }
-    placeTools();
-    var _placeRt; window.addEventListener("resize", function(){ clearTimeout(_placeRt); _placeRt=setTimeout(placeTools, 200); });
+    layout();
+    var _placeRt; window.addEventListener("resize", function(){ clearTimeout(_placeRt); _placeRt=setTimeout(layout, 200); });
+    window.__refreshFilterBadge=refreshFilterBadge; window.__closeSheet=closeSheet;
 
     function bind(id,key,num){var e=document.getElementById(id); if(e)e.addEventListener("change",function(ev){F[key]=num?Number(ev.target.value):ev.target.value;apply();});}
     bind("f_city","city");bind("f_ht","ht");bind("f_src","src");bind("f_pm","pmf");bind("f_grade","grade");bind("f_sort","sort");
@@ -2629,6 +2769,7 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
     });
 
     document.getElementById("f_reset").addEventListener("click",resetAll);
+    var applyBtn0=document.getElementById("sheet-apply"); if(applyBtn0) applyBtn0.addEventListener("click",function(){ if(window.__closeSheet)window.__closeSheet(); });
     function resetAll(){
       F={q:"",city:"all",src:"all",pmf:"all",ht:"all",beds:0,baths:0,pmin:2400,pmax:6000,sqmin:0,grade:"all",deal:false,newOnly:false,fav:false,sort:"price-asc"};
       qin.value="";qclear.hidden=true;
