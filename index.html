@@ -1424,6 +1424,55 @@ body.explorer-mode #backtop{display:none;}
   .lcard:active{ transform: scale(.994); }
   .lcard.sel{ box-shadow:0 0 0 2px var(--evergreen), var(--shadow-md); }
 }
+
+/* ===================== MOBILE DENSITY PASS (Jul 2026) ===================== */
+@media (max-width: 1024px) {
+  /* --- Compact control bar: always-visible = [toggle] + [search + Filters]; the rest is
+         revealed only on tapping Filters, reclaiming vertical space for actual content. --- */
+  .explorer-container > .sidebar-tools { padding: 12px 16px !important; }
+  .st-search { display: flex; align-items: center; gap: 8px; }
+  .st-search input[type="search"] { flex: 1 1 auto; min-width: 0; }
+  .st-search .st-more { flex: 0 0 auto; margin: 0; height: 42px; padding: 0 14px; border-radius: 10px; position: relative; }
+  .st-more.has-active::after { content: ""; position: absolute; top: 6px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--evergreen); }
+
+  .sidebar-tools .st-quick,
+  .sidebar-tools .st-primary,
+  .sidebar-tools .st-results { display: none; }
+  .sidebar-tools.filters-open .st-quick   { display: flex; margin-top: 10px; }
+  .sidebar-tools.filters-open .st-primary { display: flex; gap: 8px; margin-top: 10px; }
+  .sidebar-tools.filters-open .st-results { display: flex; margin-top: 10px; }
+
+  /* --- Compact map legend: tight pill, no wasted whitespace, no verbose captions --- */
+  .explorer-map .map-bar {
+    flex-wrap: nowrap !important; gap: 0 8px !important; padding: 6px 10px !important;
+    font-size: 9.5px; bottom: 10px !important; left: 10px !important; right: auto !important;
+    width: auto; max-width: calc(100% - 20px); border-radius: 10px; background: rgba(252,251,249,.95);
+  }
+  .explorer-map .map-bar .map-hq,
+  .explorer-map .map-bar .map-toggle-hint { display: none; }
+  .explorer-map .map-bar .dotkey { width: 9px; height: 9px; margin-right: 3px; }
+  .explorer-map .map-bar .map-filter-note { padding: 2px 8px; }
+}
+
+/* --- Denser, mobile-specific listing cards (not the desktop layout) --- */
+@media (max-width: 768px) {
+  .explorer-sidebar .board { gap: 10px; }
+  .lcard { padding: 12px 14px 12px 16px; }
+  .lc-top { margin-bottom: 2px; }
+  .lc-price { font-size: 22px; }
+  .lc-addr { font-size: 14.5px; margin-top: 1px; }
+  .lc-city { font-size: 11.5px; }
+  .lc-specs { gap: 5px; margin-top: 6px; }
+  .lc-specs .spec { padding: 2px 7px; font-size: 11px; }
+  /* metrics: drop the heavy boxed 3-column strip for a light inline row */
+  .lc-metrics { margin-top: 8px; padding: 0; border: none !important; background: none !important; gap: 16px; }
+  .lc-metrics .metric { padding: 0; border: none !important; }
+  .lc-metrics .metric span { font-size: 9.5px; }
+  .lc-metrics .metric b { font-size: 12.5px; }
+  .lc-foot { margin-top: 8px; }
+  .lc-fav { width: 34px; height: 34px; top: 12px; right: 12px; }
+  .lc-pm { margin-top: 7px; padding-top: 7px; }
+}
 /* === DESIGN_CSS_END === */
 </style>
 </head>
@@ -1478,7 +1527,7 @@ body.explorer-mode #backtop{display:none;}
         <span><span class="dotkey" style="background:#5F7A34"></span>B+</span>
         <span><span class="dotkey" style="background:#B98A1F"></span>B</span>
         <span><span class="dotkey" style="background:#A64B2A"></span>C</span>
-        <span><span class="pillkey" style="background:#0064E0">META</span>1 Hacker Way</span>
+        <span class="map-hq"><span class="pillkey" style="background:#0064E0">META</span>1 Hacker Way</span>
         <span id="mapFilterNote" class="map-filter-note" hidden></span>
         <span class="mono map-toggle-hint" style="opacity:.75;">toggle borders &#8599; top-right</span>
       </div>
@@ -2462,6 +2511,7 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       // Keep the map in lockstep with the filters: matching pins stay vivid, the rest recede.
       var narrowed=list.length<BASE.length;
       if(mapApi.filter) mapApi.filter(list, narrowed);
+      var fmoreBtn=document.getElementById("f_more"); if(fmoreBtn) fmoreBtn.classList.toggle("has-active", narrowed);
       var mfn=document.getElementById("mapFilterNote");
       if(mfn){
         if(narrowed){ mfn.innerHTML='<b>'+list.length+'</b>&nbsp;of&nbsp;'+BASE.length+' shown'; mfn.hidden=false; }
@@ -2544,7 +2594,18 @@ var BOUNDS={"cities":{"Sunnyvale":{"type":"Polygon","coordinates":[[[-122.0652,3
       b.addEventListener("click",function(){var k=b.getAttribute("data-q");F[k]=!F[k];b.classList.toggle("on",F[k]);apply();});
     });
     var more=document.getElementById("f_more"), adv=document.getElementById("f_adv");
-    more.addEventListener("click",function(){var open=adv.hidden;adv.hidden=!open;more.setAttribute("aria-expanded",String(open));more.classList.toggle("on",open);});
+    // Put the Filters button in the search row so the always-visible mobile bar is just
+    // [toggle] + [search + Filters]; everything else (chips, City/Sort, advanced, results) is
+    // revealed only when Filters is tapped — reclaiming vertical space for content.
+    var stSearch=tools.querySelector(".st-search");
+    if(stSearch&&more) stSearch.appendChild(more);
+    more.addEventListener("click",function(){
+      var open=adv.hidden;
+      adv.hidden=!open;
+      more.setAttribute("aria-expanded",String(open));
+      more.classList.toggle("on",open);
+      tools.classList.toggle("filters-open",open);   // mobile: reveals chips + City/Sort + results
+    });
 
     // One delegated click handler on `board` covers every card (save button + card-focus).
     // This scales to any number of cards without re-binding listeners on each render.
